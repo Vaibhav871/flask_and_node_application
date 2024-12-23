@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TODO App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .task {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .completed {
+            text-decoration: line-through;
+            color: gray;
+        }
+    </style>
+</head>
+<body>
+    <h1>TODO App</h1>
+    <form action="/add" method="POST">
+        <input type="text" name="title" placeholder="Enter a new task" required>
+        <button type="submit">Add Task</button>
+    </form>
+    <ul>
+        {% for task in tasks %}
+        <li class="task">
+            <span class="{{ 'completed' if task.completed else '' }}">{{ task.title }}</span>
+            <div>
+                <a href="/complete/{{ task.id }}">{{ 'Undo' if task.completed else 'Complete' }}</a>
+                <a href="/delete/{{ task.id }}" style="color: red;">Delete</a>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

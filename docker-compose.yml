@@ -1,0 +1,42 @@
+version: '3.9'
+
+services:
+  flask-app:
+    build:
+      context: ./project1
+    container_name: flask-app
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./flask-app:/app
+    environment:
+      FLASK_ENV: development
+    depends_on:
+      - mysql-db
+
+  node-app:
+    build:
+      context: ./project_2
+    container_name: node-app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./node-app:/app
+    depends_on:
+      - mysql-db
+
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: todo_app
+      MYSQL_USER: user
+      MYSQL_PASSWORD: userpassword
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  mysql-data:
