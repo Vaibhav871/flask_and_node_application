@@ -1,51 +1,47 @@
-from flask import Flask, render_template, request, redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
+import os
+from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask_mysqldb import MySQL
 
 app = Flask(__name__)
 
-# MySQL database configuration
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://username:password@localhost/todo_app'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Configure MySQL from environment variables
+app.config['MYSQL_HOST'] = os.environ.get('MYSQL_HOST', 'localhost')
+app.config['MYSQL_USER'] = os.environ.get('MYSQL_USER', 'default_user')
+app.config['MYSQL_PASSWORD'] = os.environ.get('MYSQL_PASSWORD', 'default_password')
+app.config['MYSQL_DB'] = os.environ.get('MYSQL_DB', 'default_db')
 
-db = SQLAlchemy(app)
+# Initialize MySQL
+mysql = MySQL(app)
 
-# Database model
-class Task(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(255), nullable=False)
-    completed = db.Column(db.Boolean, default=False)
+def init_db():
+    with app.app_context():
+        cur = mysql.connection.cursor()
+        cur.execute('''
+        CREATE TABLE IF NOT EXISTS messages (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            message TEXT
+        );
+        ''')
+        mysql.connection.commit()  
+        cur.close()
 
-# Routes
 @app.route('/')
-def index():
-    tasks = Task.query.all()
-    return render_template('index.html', tasks=tasks)
+def hello():
+    cur = mysql.connection.cursor()
+    cur.execute('SELECT message FROM messages')
+    messages = cur.fetchall()
+    cur.close()
+    return render_template('index.html', messages=messages)
 
-@app.route('/add', methods=['POST'])
-def add_task():
-    title = request.form['title']
-    new_task = Task(title=title)
-    db.session.add(new_task)
-    db.session.commit()
-    return redirect(url_for('index'))
-
-@app.route('/delete/<int:task_id>')
-def delete_task(task_id):
-    task = Task.query.get(task_id)
-    if task:
-        db.session.delete(task)
-        db.session.commit()
-    return redirect(url_for('index'))
-
-@app.route('/complete/<int:task_id>')
-def complete_task(task_id):
-    task = Task.query.get(task_id)
-    if task:
-        task.completed = not task.completed
-        db.session.commit()
-    return redirect(url_for('index'))
+@app.route('/submit', methods=['POST'])
+def submit():
+    new_message = request.form.get('new_message')
+    cur = mysql.connection.cursor()
+    cur.execute('INSERT INTO messages (message) VALUES (%s)', [new_message])
+    mysql.connection.commit()
+    cur.close()
+    return jsonify({'message': new_message})
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()  # Create tables if they don't exist
-    app.run(debug=True)
+    init_db()
+    app.run(host='0.0.0.0', port=5000, debug=True)

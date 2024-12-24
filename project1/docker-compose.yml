@@ -11,13 +11,14 @@ services:
       MYSQL_PASSWORD: admin
     volumes:
       - ./mysql-data:/var/lib/mysql
+      - ./message.sql:/docker-entrypoint-initdb.d/message.sql  
     networks:
       - twotier
-
+ 
 
   flask-app:
     build:
-      context: ./project1
+      context: .
     container_name: flask-app
     ports:
       - "5000:5000"
@@ -34,7 +35,7 @@ services:
 
 
   app:
-    build: ./project_2
+    build: .
     container_name: node-app
     ports:
       - "3000:3000"  
